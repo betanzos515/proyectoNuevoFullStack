@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-
+import bcrypt from 'bcrypt';
+import generarId from "../helpers/generarId.js";
 const veterinarioSchema = mongoose.Schema({
     nombre:{
         type:String,
@@ -27,13 +28,27 @@ const veterinarioSchema = mongoose.Schema({
     },
     token:{
         type:String,
-        default: Date.now()
+        default: generarId()
     },
     confirmado:{
         type:Boolean,
         default:false
     }
 });
+
+veterinarioSchema.pre('save', async function(next){
+    if(!this.isModified('password')){
+        next();
+    }
+    const salt = await bcrypt.genSalt(10); //salt son las rondas de encriptación.
+    this.password = await bcrypt.hash(this.password,salt); //se manda a 
+});
+
+//creamos un metodo dentro del modelo para poder comparar los passwords.
+veterinarioSchema.methods.comprobarPassword = async function( passwordFormulario ){
+    return await bcrypt.compare(passwordFormulario, this.password);
+}
+
 
 const Veterinario = mongoose.model('Veterinario', veterinarioSchema); 
 
